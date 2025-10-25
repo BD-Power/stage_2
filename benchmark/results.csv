@@ -1,0 +1,4 @@
+"Benchmark","Mode","Threads","Samples","Score","Score Error (99,9%)","Unit"
+"org.example.IndexBenchmark.testCharacterCount","avgt",1,10,"1,635777","0,142618","ms/op"
+"org.example.IndexBenchmark.testTokenization","avgt",1,10,"6,154244","0,887881","ms/op"
+"org.example.IndexBenchmark.testWriteToDatamart","avgt",1,10,"0,211848","0,007568","ms/op"
