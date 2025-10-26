@@ -4,31 +4,31 @@ package com.example.search;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class App {
-    private static final Gson gson = new Gson();
 
-    // Datos de ejemplo (en la versión real, esto vendría del datamart)
-    private static final List<Map<String, Object>> MOCK_BOOKS = Arrays.asList(
-            Map.of("book_id", 1342, "title", "Pride and Prejudice", "author", "Jane Austen", "language", "en", "year", 1813),
-            Map.of("book_id", 5, "title", "The Communist Manifesto", "author", "Karl Marx", "language", "en", "year", 1848),
-            Map.of("book_id", 11, "title", "Alice’s Adventures in Wonderland", "author", "Lewis Carroll", "language", "en", "year", 1865),
-            Map.of("book_id", 12, "title", "De la Terre à la Lune", "author", "Jules Verne", "language", "fr", "year", 1865)
-    );
+    private static final Gson gson = new Gson();
+    private static final String DATAMART_ROOT = "datamart/indexes";
 
     public static void main(String[] args) {
         Javalin app = Javalin.create(config -> {
             config.http.defaultContentType = "application/json";
-        }).start(7003); // Puerto del Search Service
+        }).start(7003);
 
         app.get("/search", App::handleSearch);
     }
 
     private static void handleSearch(Context ctx) {
-        String query = (ctx.queryParam("q") != null ? ctx.queryParam("q") : "").toLowerCase();
+        String query = Optional.ofNullable(ctx.queryParam("q")).orElse("").toLowerCase();
         String authorFilter = ctx.queryParam("author");
         String languageFilter = ctx.queryParam("language");
         String yearStr = ctx.queryParam("year");
@@ -41,16 +41,20 @@ public class App {
         }
 
         List<Map<String, Object>> results = new ArrayList<>();
-        for (Map<String, Object> book : MOCK_BOOKS) {
-            // Aplicar filtros
-            if (authorFilter != null && !book.get("author").equals(authorFilter)) continue;
-            if (languageFilter != null && !book.get("language").equals(languageFilter)) continue;
-            if (yearFilter != null && !book.get("year").equals(yearFilter)) continue;
+        List<Path> jsonFiles = listJsonFiles(Paths.get(DATAMART_ROOT));
 
-            // Búsqueda por palabra clave (solo en título en este ejemplo simple)
-            if (!query.isEmpty() && !book.get("title").toString().toLowerCase().contains(query)) continue;
+        for (Path jsonFile : jsonFiles) {
+            try {
+                String content = Files.readString(jsonFile, StandardCharsets.UTF_8);
+                Type type = new TypeToken<Map<String, Object>>() {}.getType();
+                Map<String, Object> book = gson.fromJson(content, type);
 
-            results.add(book);
+                Optional<Map<String, Object>> filtered = buildResult(book, query, authorFilter, yearFilter);
+                filtered.ifPresent(results::add);
+
+            } catch (IOException e) {
+                System.err.println("Error reading file " + jsonFile + ": " + e.getMessage());
+            }
         }
 
         Map<String, Object> response = new HashMap<>();
@@ -60,6 +64,52 @@ public class App {
         response.put("results", results);
 
         ctx.result(gson.toJson(response));
+    }
+
+    private static Optional<Map<String, Object>> buildResult(Map<String, Object> book, String query, String authorFilter, Integer yearFilter) {
+        if (book == null || !book.containsKey("metadata") || !book.containsKey("top_terms"))
+            return Optional.empty();
+
+        Map<String, Object> meta = (Map<String, Object>) book.get("metadata");
+        Map<String, Double> topTerms = (Map<String, Double>) book.get("top_terms");
+
+        // Filtros de autor y año
+        if (authorFilter != null && meta.containsKey("author") && !meta.get("author").toString().equalsIgnoreCase(authorFilter))
+            return Optional.empty();
+
+        if (yearFilter != null && meta.containsKey("year") && !meta.get("year").toString().equals(String.valueOf(yearFilter)))
+            return Optional.empty();
+
+        // Buscar coincidencias (query puede tener varias palabras)
+        String[] searchTerms = query.split("\\s+");
+        Map<String, Double> matches = new LinkedHashMap<>();
+
+        for (String term : searchTerms) {
+            topTerms.forEach((word, freq) -> {
+                if (word.toLowerCase().contains(term)) {
+                    matches.put(word, freq);
+                }
+            });
+        }
+
+        if (!query.isEmpty() && matches.isEmpty()) return Optional.empty();
+
+        // Armar resultado limpio
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("book_id", book.get("book_id"));
+        result.put("title", meta.getOrDefault("title", "Unknown"));
+        result.put("author", meta.getOrDefault("author", "Unknown"));
+        result.put("matches", matches);
+
+        return Optional.of(result);
+    }
+
+    private static List<Path> listJsonFiles(Path dir) {
+        try (Stream<Path> files = Files.walk(dir)) {
+            return files.filter(p -> p.toString().endsWith(".json")).collect(Collectors.toList());
+        } catch (IOException e) {
+            return List.of();
+        }
     }
 
     private static Map<String, Object> buildFilters(String author, String lang, Integer year) {
