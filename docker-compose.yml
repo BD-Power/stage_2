@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  ingestion:
+    build: ./ingestion_service
+    container_name: ingestion
+    environment:
+      - DATALAKE_ROOT=/data/datalake
+      - INGEST_PORT=7001
+    ports:
+      - "7001:7001"
+    volumes:
+      - datalake:/data/datalake
+
+  indexing:
+    build: ./indexing_service
+    container_name: indexing
+    environment:
+      - DATAMART_ROOT=/data/datamart
+      - INDEX_PORT=7002
+    ports:
+      - "7002:7002"
+    depends_on:
+      - ingestion
+    volumes:
+      - datalake:/data/datalake
+      - datamart:/data/datamart
+
+  search:
+    build: ./search_service
+    container_name: search
+    environment:
+      - DATAMART_ROOT=/data/datamart
+      - SEARCH_PORT=7003
+    ports:
+      - "7003:7003"
+    depends_on:
+      - indexing
+    volumes:
+      - datamart:/data/datamart
+
+  control:
+    build: ./control_module
+    container_name: control
+    environment:
+      - CONTROL_PORT=7000
+    ports:
+      - "7000:7000"
+    depends_on:
+      - ingestion
+      - indexing
+      - search
+
+volumes:
+  datalake:
+  datamart:

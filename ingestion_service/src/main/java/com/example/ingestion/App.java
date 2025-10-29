@@ -1,4 +1,3 @@
-// ingestion_service/src/main/java/com/example/ingestion/App.java
 package com.example.ingestion;
 
 import io.javalin.Javalin;
