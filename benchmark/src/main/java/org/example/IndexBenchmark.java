@@ -5,6 +5,7 @@ import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -17,10 +18,21 @@ public class IndexBenchmark {
     private final String MOCK_TERM = "pride";
 
     @Setup(Level.Trial)
-    public void setup() throws IOException {
-        text = Files.readString(Path.of("datalake/sample.txt"));
-        if (text.isEmpty()) {
-            text = "Sample text for benchmark simulation repeated ".repeat(2000);
+    public void setup() throws Exception {
+
+
+        try (Stream<Path> paths = Files.walk(Path.of("datalake"))) {
+            Optional<Path> raw = paths
+                    .filter(p -> p.getFileName().toString().equalsIgnoreCase("raw.txt"))
+                    .findFirst();
+
+            if (raw.isPresent()) {
+                System.out.println("Using real text from: " + raw.get());
+                text = Files.readString(raw.get());
+            } else {
+                System.out.println("Not found raw.txt — using synthetic text.");
+                text = "Sample benchmark text ".repeat(4000);
+            }
         }
 
         invertedIndex = new HashMap<>();
@@ -33,6 +45,8 @@ public class IndexBenchmark {
                 Map.of("id", 42, "author", "Unknown", "year", 1900, "title", "A Mystery")
         );
     }
+
+    // Benchmarks reales
 
     @Benchmark
     public int testTokenization() {
@@ -53,14 +67,6 @@ public class IndexBenchmark {
     }
 
     @Benchmark
-    public void testMetadataInsertion() {
-        int bookId = 1342;
-        String title = "Pride and Prejudice";
-        String author = "Jane Austen";
-        int year = 1813;
-    }
-
-    @Benchmark
     public int testIndexLookup() {
         List<Integer> postingList = invertedIndex.get(MOCK_TERM);
         return postingList != null ? postingList.size() : 0;
@@ -72,7 +78,7 @@ public class IndexBenchmark {
         for (Map<String, Object> result : mockSearchResults) {
             String author = (String) result.get("author");
             Integer year = (Integer) result.get("year");
-            if ("Jane Austen".equals(author) && year != null && year == 1813) {
+            if ("Jane Austen".equals(author) && year == 1813) {
                 filteredAndRanked.add(result);
             }
         }
