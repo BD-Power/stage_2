@@ -46,8 +46,6 @@ public class IndexBenchmark {
         );
     }
 
-    // Benchmarks reales
-
     @Benchmark
     public int testTokenization() {
         String[] tokens = text.split("\\W+");

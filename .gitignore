@@ -10,3 +10,6 @@ datamart/
 
 # Logs
 *.log
+
+dependency-reduced-pom.xml
+benchmark/datamart/tmp/
