@@ -45,7 +45,7 @@ services:
     environment:
       - CONTROL_PORT=7000
     ports:
-      - "7000:7000"
+      - "7004:7004"
     depends_on:
       - ingestion
       - indexing
