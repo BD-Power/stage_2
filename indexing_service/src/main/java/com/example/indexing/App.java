@@ -1,4 +1,3 @@
-// indexing_service/src/main/java/com/example/indexing/App.java
 package com.example.indexing;
 
 import io.javalin.Javalin;
@@ -94,15 +93,12 @@ public class App {
 
     private static void processBook(int bookId, Path rawPath) throws IOException {
         String text = Files.readString(rawPath, StandardCharsets.UTF_8);
-        // Extraer metadatos básicos
         Map<String, String> meta = extractMetadata(text);
 
-        // Tokenizar y contar
         Map<String, Long> freq = Arrays.stream(text.toLowerCase().split("[^a-záéíóúüñ]+"))
                 .filter(w -> w.length() > 3)
                 .collect(Collectors.groupingBy(w -> w, Collectors.counting()));
 
-        // Top 20 palabras
         LinkedHashMap<String, Long> top = freq.entrySet().stream()
                 .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(20)

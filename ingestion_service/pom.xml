@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>ingestion_service</artifactId>
+    <artifactId>ingestion-service</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -30,7 +30,6 @@
 
     <build>
         <plugins>
-            <!-- Plugin para jar estándar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -44,7 +43,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Plugin para jar con dependencias -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>

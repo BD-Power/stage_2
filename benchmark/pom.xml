@@ -5,7 +5,7 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.example</groupId>
-    <artifactId>benchmark_module</artifactId>
+    <artifactId>benchmark-module</artifactId>
     <version>1.0.0</version>
 
     <properties>

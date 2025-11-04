@@ -44,7 +44,6 @@ public class App {
             }
 
             try {
-                // Verificar si ya está indexado
                 if (isAlreadyIndexed(bookId)) {
                     ctx.result(gson.toJson(Map.of(
                             "book_id", bookId,
@@ -54,7 +53,7 @@ public class App {
                     return;
                 }
 
-                // Ingestión
+                // Ingestion
                 HttpResponse<JsonNode> ingestResp = Unirest
                         .post("http://localhost:7001/ingest/" + bookId)
                         .asJson();
@@ -70,7 +69,7 @@ public class App {
                     return;
                 }
 
-                // Indexado
+                // Indexing
                 HttpResponse<JsonNode> indexResp = Unirest
                         .post("http://localhost:7002/index/update/" + bookId)
                         .asJson();
@@ -80,7 +79,7 @@ public class App {
                     return;
                 }
 
-                // Respuesta final
+
                 ctx.result(gson.toJson(Map.of(
                         "book_id", bookId,
                         "pipeline", "completed",

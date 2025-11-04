@@ -5,16 +5,17 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Información del proyecto raíz -->
     <groupId>com.example</groupId>
     <artifactId>stage_2</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <!-- Declaración de módulos -->
     <modules>
         <module>ingestion_service</module>
-        <!-- puedes añadir otros módulos aquí -->
+        <module>indexing_service</module>
+        <module>search_service</module>
+        <module>control_module</module>
+        <module>benchmark_module</module>
     </modules>
 
     <properties>
@@ -25,7 +26,6 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Plugin de compilación común para todos los módulos -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>

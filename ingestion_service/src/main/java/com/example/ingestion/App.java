@@ -20,13 +20,13 @@ import java.util.stream.Stream;
 
 public class App {
     private static final Gson gson = new Gson();
-    private static final String DATALAKE_ROOT = "datalake"; // Carpeta raíz del datalake
+    private static final String DATALAKE_ROOT = "datalake";
     private static final HttpClient httpClient = HttpClient.newHttpClient();
 
     public static void main(String[] args) {
         Javalin app = Javalin.create(config -> {
             config.http.defaultContentType = "application/json";
-        }).start(7001); // Puerto del Ingestion Service
+        }).start(7001);
 
         app.get("/status", ctx -> {
             JsonObject status = new JsonObject();
@@ -55,7 +55,6 @@ public class App {
         String bookPath = DATALAKE_ROOT + "/" + timestamp + "/" + bookId;
 
         try {
-            // Descargar el libro
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(gutenbergUrl))
                     .timeout(java.time.Duration.ofSeconds(10))
@@ -68,14 +67,11 @@ public class App {
                 return;
             }
 
-            // Crear directorio
             Path dir = Paths.get(bookPath);
             Files.createDirectories(dir);
 
-            // Guardar contenido
             Files.write(dir.resolve("raw.txt"), response.body().getBytes());
 
-            // Responder con éxito
             JsonObject result = new JsonObject();
             result.addProperty("book_id", bookId);
             result.addProperty("status", "downloaded");

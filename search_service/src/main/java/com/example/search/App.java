@@ -1,4 +1,3 @@
-// search_service/src/main/java/com/example/search/App.java
 package com.example.search;
 
 import io.javalin.Javalin;
@@ -73,14 +72,12 @@ public class App {
         Map<String, Object> meta = (Map<String, Object>) book.get("metadata");
         Map<String, Double> topTerms = (Map<String, Double>) book.get("top_terms");
 
-        // Filtros de autor y año
         if (authorFilter != null && meta.containsKey("author") && !meta.get("author").toString().equalsIgnoreCase(authorFilter))
             return Optional.empty();
 
         if (yearFilter != null && meta.containsKey("year") && !meta.get("year").toString().equals(String.valueOf(yearFilter)))
             return Optional.empty();
 
-        // Buscar coincidencias (query puede tener varias palabras)
         String[] searchTerms = query.split("\\s+");
         Map<String, Double> matches = new LinkedHashMap<>();
 
@@ -94,7 +91,6 @@ public class App {
 
         if (!query.isEmpty() && matches.isEmpty()) return Optional.empty();
 
-        // Armar resultado limpio
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("book_id", book.get("book_id"));
         result.put("title", meta.getOrDefault("title", "Unknown"));
