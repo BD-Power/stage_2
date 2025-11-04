@@ -15,7 +15,7 @@ The architecture is composed of four independent microservices, each responsible
 
 - **Ingestion Service:** Downloads raw books from Project Gutenberg and stores them in the datalake using the hierarchical structure defined in Stage 1.  
 - **Indexing Service:** Processes raw text, extracts metadata (title, author), tokenizes content, and builds an inverted index stored in the datamart.  
-- **Search Service:** Exposes a query API to search and filter indexed books by keyword, author, language, or year.  
+- **Search Service:** Exposes a query API to search and filter indexed books by keyword, and optionally by author.  
 - **Control Module:** Orchestrates the full pipeline: triggers ingestion → indexing → makes data available for search.
 
 All services communicate exclusively via **HTTP/JSON**, enabling loose coupling, independent deployment, and fault isolation.
@@ -42,7 +42,13 @@ Each service is a standalone **Maven module** with its own `pom.xml` and `App.ja
 
 ##  Building and Running
 
-### Manual Execution (Recommended for Development)
+### Running from an IDE (Recommended)
+
+You can run each service directly from any Java IDE (IntelliJ IDEA, Eclipse, VS Code, etc.).
+Open the module folder, locate the `App.java` entrypoint, and run it with the IDE's **Run ▶** command.
+This approach is more convenient for development and testing.
+
+### Manual Execution (Jar-based)
 
 **Build all services:**
 ```bash
@@ -51,18 +57,20 @@ mvn clean package
 **Run each service in a separate terminal:**
 ```bash
 # Terminal 1: Ingestion Service
-java -jar ingestion_service/target/ingestion_service-1.0-jar-with-dependencies.jar
+java -jar ingestion_service/target/ingestion_service-1.0.0-jar-with-dependencies.jar
 
 # Terminal 2: Indexing Service
-java -jar indexing_service/target/indexing_service-1.0-jar-with-dependencies.jar
+java -jar indexing_service/target/indexing_service-1.0.0-jar-with-dependencies.jar
 
 # Terminal 3: Search Service
-java -jar search_service/target/search_service-1.0-jar-with-dependencies.jar
+java -jar search_service/target/search_service-1.0.0-jar-with-dependencies.jar
 
 # Terminal 4: Control Module
-java -jar control_module/target/control_module-1.0-jar-with-dependencies.jar
+java -jar control_module/target/control_module-1.0.0-jar-with-dependencies.jar
 ```
 ### Docker Compose (Production-like Environment)
+
+This is optional and only provided for deployment/testing convenience.
 
 **Build and start all services:**
 ```bash
@@ -98,8 +106,6 @@ docker-compose down
 |--------|-----------|--------------|
 | **GET** | `/search?q={term}` | Searches by keyword |
 | **GET** | `/search?q={term}&author={name}` | Filters by author |
-| **GET** | `/search?q={term}&language={code}` | Filters by language *(ISO 639-1)* |
-| **GET** | `/search?q={term}&year={YYYY}` | Filters by publication year |
 
 ---
 
@@ -111,19 +117,21 @@ docker-compose down
 
 ## Benchmarking
 
-The project includes **JMH (Java Microbenchmark Harness)** benchmarks to evaluate performance of core operations:
+This project includes a separate Benchmark Module using  **JMH (Java Microbenchmark Harness)** to measure performance of the most computationally relevant operations of the system.
+The benchmark does not form part of the microservice architecture; instead, it runs offline to provide empirical performance insights.
 
 | Benchmark Area | Description |
 |----------------|--------------|
 | **Text tokenization** | Splits raw text into analyzable tokens. |
-| **Metadata extraction** | Extracts structured information (title, author, language, year). |
+| **Character processing** | Counts letters and alphanumeric characters. |
 | **Index lookup** | Tests the speed and efficiency of inverted index searches. |
-| **Query filtering** | Evaluates the performance of applying filters (author, language, year). |
+| **Query filtering** | Evaluates the performance of applying basic ranking filters. |
 
 **Run benchmarks:**
 ```bash
+cd benchmark
 mvn clean package
-java -jar target/benchmarks.jar
+java -jar target/benchmarks.jar -rf csv -rff results.csv
 ```
 ## Design Decisions
 
